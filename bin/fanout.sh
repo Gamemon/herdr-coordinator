@@ -33,7 +33,7 @@ CONFIG="${FANOUT_CONFIG:-$HOME/.config/fanout/agents.conf}"
 # ---------------------------------------------------------------------------
 
 # Load agent definitions from config file into associative arrays.
-declare -A AGENT_PANE AGENT_SEQ_PRE
+declare -A AGENT_PANE
 load_config() {
   [[ -f "$CONFIG" ]] || { echo "config not found: $CONFIG" >&2; return 1; }
   while IFS= read -r line; do
@@ -178,9 +178,10 @@ cmd_fanout() {
   [[ ${#agent_names[@]} -gt 0 ]] || { echo "no agents specified (use -a NAME -t TASK)" >&2; return 1; }
   [[ ${#agent_names[@]} -eq ${#agent_tasks[@]} ]] || { echo "agent/task count mismatch" >&2; return 1; }
 
-  local run_tok="$marker.$(date +%s).$RANDOM"
+  local run_tok
+  run_tok="$marker.$(date +%s).$RANDOM"
   local -A pane_of
-  local -a pids=() pre_seqs=()
+  local -a pre_seqs=()
 
   # Resolve panes + capture pre-send seq
   local display=""
@@ -248,7 +249,6 @@ cmd_fanout() {
   while [[ "$has_errors" == 1 ]] && (( attempt < max_retries )); do
     attempt=$((attempt + 1))
     # Re-dispatch only errored agents
-    local -a retry_pids=()
     local ri=0
     for name in "${agent_names[@]}"; do
       if [[ "${errored[$name]:-0}" == 1 ]]; then
